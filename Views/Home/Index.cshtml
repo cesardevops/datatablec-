@@ -1,0 +1,124 @@
+﻿@{
+    ViewBag.Title = "DataTables Ajax Sql";
+}
+<br />
+<link href="~/Assets/css/jquery.dynatable.css" rel="stylesheet" />
+<select id="sel-page-size" class="custom-select custom-select mb-3">
+    <option  value="10">10</option>
+    <option selected value="50">50</option>
+    <option value="100">100</option>
+</select>
+<div class="input-group mb-3">
+    <input type="text" class="form-control" id="input-search" placeholder="Ingrese texto" aria-label="Buscar" aria-describedby="btn-search-in-table" onkeypress="return inputSearchOnKeyPress(event)">
+    <div class="input-group-append">
+        <button class="btn btn-outline-secondary" type="button" id="btn-search-in-table">Buscar</button>
+    </div>
+</div>
+
+<table id="my-final-table">
+    <thead style="background:black;">
+        <tr>
+            <th>intIdPersona</th>
+            <th>vchApePat</th>
+            <th>vchApeMat</th>
+            <th>vchNombres</th>
+            <th>vchDocumento</th>
+            <th>vchCorreo</th>
+            <th>intIdEvento</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+@section scripts {
+    <script src="~/Assets/js/jquery.dynatable.js"></script>
+
+    <script type="text/javascript">
+
+        function start() {
+            document.getElementById("sel-page-size").addEventListener("change", ChangePageSize, false);
+            document.getElementById("btn-search-in-table").addEventListener("click", SearchInTable);
+        }
+
+        function ChangePageSize() {
+            //d = document.getElementById("sel-page-size").value;
+            //alert(d);
+            CallGetAllData();
+        }
+
+        function SearchInTable() {
+            //d = document.getElementById("input-search").value;
+            //alert(d);
+            CallGetAllData();
+        }
+        function inputSearchOnKeyPress(e) {
+            if (e.keyCode == 13) {
+                SetParameter();
+                return false;
+            }
+        }
+
+        var paginator = new Object();
+
+        function CallGetAllData() {
+
+            paginator.queryRecordCount = document.getElementById("sel-page-size").value;
+            paginator.SearchFilter = document.getElementById("input-search").value;
+            paginator.SortBy = "";
+            paginator.totalRecordCount = 0;
+            paginator.records = null;
+
+            GetAllData();
+        }
+
+        function GetAllData() {
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("GetAllPaginator", "Home")',
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify(paginator),
+                dataType: "json",
+                success: function (recData) {
+                    console.log(recData);
+                    var dynatable = $('#my-final-table').dynatable({
+                        dataset: {
+                            totalRecordCount: recData.totalRecordCount,
+                            perPageDefault: recData.queryRecordCount,
+                            records: recData.records
+                        },
+                        features: {
+                            paginate: false,
+                            search: false,
+                            recordCount: false,
+                            perPageSelect: false,
+                            pushState: true,
+                        }
+                    }).data('dynatable');
+                    dynatable.paginationPerPage.set(paginator.queryRecordCount); // Show 20 records per page
+                    dynatable.paginationPage.set(paginator.pageIndex); // Go to page 5
+                    dynatable.settings.dataset.originalRecords = recData.records;
+                    dynatable.process();
+                    //$('#my-final-table').dynatable({
+                    //    dataset: {
+                    //        totalRecordCount: recData.totalRecordCount,
+                    //        perPageDefault: recData.queryRecordCount,
+                    //        records: recData.records
+                    //    },
+                    //      features: {
+                    //        paginate: false,
+                    //        search: false,
+                    //        recordCount: false,
+                    //        perPageSelect: false,
+                    //        pushState: true,
+                    //    }
+                    //});
+                },
+                error: function() { alert('A error'); }
+            });
+        }
+        window.addEventListener("load", start, false);
+        paginator.pageIndex = 1;
+        CallGetAllData()
+
+    </script>
+}
